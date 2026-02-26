@@ -1,5 +1,7 @@
 # Odoo Local Dev Toolkit
 
+> 🌐 [العربية](README.ar.md)
+
 Mirror your **Odoo.sh project** to a local Docker environment in one command.
 
 > All configuration lives in a single `.env` file — copy it and you're done.
