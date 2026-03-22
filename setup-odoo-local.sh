@@ -265,6 +265,8 @@ services:
 
   odoo:
     image: odoo:${ODOO_VERSION:-16.0}
+    command: >
+      bash -c 'if [ -n "$$EXTRA_PIP_PACKAGES" ]; then pip3 install --no-cache-dir --break-system-packages $$EXTRA_PIP_PACKAGES; fi; exec /entrypoint.sh odoo'
     restart: unless-stopped
     depends_on:
       db:

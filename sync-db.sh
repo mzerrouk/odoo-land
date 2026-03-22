@@ -178,13 +178,11 @@ if [ -d "$FILESTORE_DIR" ]; then
     error "Could not find Odoo container ID. Make sure the stack was started at least once (make up)."
   fi
 
-  docker cp "${FILESTORE_DIR}/." "${ODOO_CONTAINER}:/var/lib/odoo/filestore/${LOCAL_DB_NAME}/"
-
-  # docker cp copies files as root — Odoo runs as user 'odoo' inside the container.
-  # Fix ownership so Odoo can read/write/delete all filestore files.
-  log "Fixing filestore permissions (chown odoo:odoo)..."
-  docker exec -u root "$ODOO_CONTAINER" \
-    chown -R odoo:odoo /var/lib/odoo/filestore/
+  log "Copying filestore and fixing permissions..."
+  # The Odoo container is stopped, so we start a temporary one sharing its volumes
+  docker run --rm -u root --volumes-from "$ODOO_CONTAINER" \
+    -v "${FILESTORE_DIR}:/tmp/filestore" \
+    "odoo:${ODOO_VERSION:-16.0}" bash -c "mkdir -p /var/lib/odoo/filestore/${LOCAL_DB_NAME} && cp -a /tmp/filestore/. /var/lib/odoo/filestore/${LOCAL_DB_NAME}/ && chown -R odoo:odoo /var/lib/odoo/"
 
   log "Filestore restored ✓"
 else
