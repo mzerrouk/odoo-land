@@ -220,6 +220,16 @@ UPDATE ir_config_parameter
   SET value = 'http://localhost:${ODOO_PORT}'
   WHERE key = 'web.base.url';
 
+-- Fix PDF styling: wkhtmltopdf must use internal port 8069 inside Docker
+INSERT INTO ir_config_parameter (key, value)
+  VALUES ('report.url', 'http://localhost:8069')
+  ON CONFLICT (key) DO UPDATE SET value = 'http://localhost:8069';
+
+-- Freeze base URL to prevent Odoo from auto-updating it
+INSERT INTO ir_config_parameter (key, value)
+  VALUES ('web.base.url.freeze', 'True')
+  ON CONFLICT (key) DO UPDATE SET value = 'True';
+
 -- Also reset the CDN url if set
 UPDATE ir_config_parameter
   SET value = ''

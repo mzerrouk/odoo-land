@@ -29,6 +29,7 @@ USER_DIR     := $(PROJECT_DIR)/user
 # Using COMPOSE_YML to avoid the collision (global `export` would break child docker compose calls).
 COMPOSE_YML  := $(PROJECT_DIR)/docker-compose.yml
 COMPOSE      := docker compose -f $(COMPOSE_YML) --project-directory $(PROJECT_DIR)
+FIX_PERMS    := $(COMPOSE) exec -T -u root odoo chown -R odoo:odoo /var/lib/odoo 2>/dev/null || true
 BOLD         := \033[1m
 GREEN        := \033[0;32m
 YELLOW       := \033[1;33m
@@ -83,6 +84,9 @@ help:
 	@echo "    make user-pull          git pull latest from remote"
 	@echo "    make user-push          git add -A + commit + push"
 	@echo ""
+	@echo "$(BOLD)  FACILITY MANAGEMENT V2$(NC)"
+	@echo "    make update-facility    Update facility_managementV2 + Restart"
+	@echo ""
 	@echo "$(BOLD)  EXAMPLES$(NC)"
 	@echo "    make sync-db BACKUP=~/Downloads/backup.zip"
 	@echo "    make update MODULE=sale"
@@ -113,6 +117,7 @@ sync-db: _require-env _require-compose
 up: _require-compose
 	@echo "$(BOLD)▶  Starting containers...$(NC)"
 	@$(COMPOSE) up -d
+	@$(FIX_PERMS)
 	@echo "$(GREEN)[✔]$(NC) Odoo running at http://localhost:$(ODOO_PORT)"
 
 down: _require-compose
@@ -126,6 +131,7 @@ stop: _require-compose
 restart: _require-compose
 	@echo "$(BOLD)▶  Restarting Odoo...$(NC)"
 	@$(COMPOSE) restart odoo
+	@$(FIX_PERMS)
 	@echo "$(GREEN)[✔]$(NC) Odoo restarted — http://localhost:$(ODOO_PORT)"
 
 reset-db: _require-compose
@@ -133,6 +139,7 @@ reset-db: _require-compose
 	@read -p "Type 'yes' to confirm: " confirm && [ "$$confirm" = "yes" ] || (echo "Aborted." && exit 1)
 	@$(COMPOSE) down -v
 	@$(COMPOSE) up -d
+	@$(FIX_PERMS)
 	@echo "$(GREEN)[✔]$(NC) Fresh stack started — http://localhost:$(ODOO_PORT)"
 
 # ══════════════════════════════════════════════════════════════════
@@ -321,3 +328,13 @@ user-push: _require-user-git
 	@echo "$(BOLD)▶  Pushing to remote...$(NC)"
 	@git -C $(USER_DIR) push
 	@echo "$(GREEN)[✔]$(NC) Pushed: $(MSG)"
+
+# ══════════════════════════════════════════════════════════════════
+#  FACILITY MANAGEMENT V2 (PROJ)
+# ══════════════════════════════════════════════════════════════════
+
+update-facility: _require-compose
+	@echo "$(BOLD)▶  Updating facility_managementV2...$(NC)"
+	@$(COMPOSE) exec odoo odoo -u facility_managementV2 -d $(LOCAL_DB_NAME) --stop-after-init
+	@$(COMPOSE) restart odoo
+	@echo "$(GREEN)[✔]$(NC) facility_managementV2 updated and Odoo restarted"

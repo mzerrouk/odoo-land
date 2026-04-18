@@ -301,6 +301,13 @@ header "Starting Docker containers"
 docker compose up -d
 log "All containers started"
 
+# ── FIX PERMISSIONS (Final Solution) ───────────────────────────
+# Some Odoo versions (16.0 vs 18.0) use different UIDs for the odoo user.
+# We force the correct ownership on the data volume to avoid 500 errors.
+log "Ensuring correct volume permissions..."
+docker compose exec -T -u root odoo chown -R odoo:odoo /var/lib/odoo
+log "Permissions fixed ✓"
+
 # ─────────────────────────────────────────────────────────────────
 #  DONE
 # ─────────────────────────────────────────────────────────────────
